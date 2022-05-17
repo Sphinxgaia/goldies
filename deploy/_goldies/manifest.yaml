@@ -1,0 +1,137 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: goldie
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: goldie-main
+  labels:
+    app: goldie
+spec:
+  selector:
+    matchLabels:
+      component: goldie-main
+  template:
+    metadata:
+      labels:
+        component: goldie-main
+    spec:
+      terminationGracePeriodSeconds: 5
+      serviceAccountName: goldie
+      containers:
+      - name: server
+        image: ghcr.io/sphinxgaia/goldie-main:basic
+        imagePullPolicy: Always
+        resources: {}
+        ports:
+        - containerPort: 9000
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: goldie-main
+  labels:
+    app: goldie
+spec:
+  selector:
+    component: goldie-main
+  ports:
+  - name: http
+    port: 9000
+    protocol: TCP
+    targetPort: 9000
+    nodePort: 30001
+  # type: ClusterIP
+  # change to NodePort if no LoadBalancer controller is available
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: goldie-body
+  labels:
+    app: goldie
+spec:
+  selector:
+    matchLabels:
+      component: goldie-body
+  template:
+    metadata:
+      labels:
+        component: goldie-body
+    spec:
+      terminationGracePeriodSeconds: 5
+      serviceAccountName: goldie
+      containers:
+      - name: server
+        # image: busybox
+        # command: 
+        # - /bin/sh
+        # args:
+        # - -c
+        # - |
+        #   sleep 15000
+        image: ghcr.io/sphinxgaia/goldie-body:basic
+        imagePullPolicy: Always
+        resources: {}
+        ports:
+          - containerPort: 9000
+        env:
+          - name: PORT
+            value: "9000"
+          # - name: VERSION
+          #   value: "blue"
+        # envFrom:
+        # - configMapRef:
+        #     name: goldie-body
+      #   volumeMounts:
+      #   - name: goldie-body
+      #     mountPath: "/secret"
+      #     readOnly: true
+      # volumes:
+      # - name: goldie-body
+      #   secret:
+      #     secretName: goldie-body
+      #     items:
+      #     - key: version
+      #       path: version
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: goldie-body
+  labels:
+    app: goldie
+spec:
+  selector:
+    component: goldie-body
+  ports:
+    - name: http
+      port: 9007
+      protocol: TCP
+      targetPort: 9000
+  type: ClusterIP
+# ---
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: goldie-body
+#   labels:
+#     app: goldie-body
+# data:
+#   VERSION: "yellow"
+# ---
+# apiVersion: v1
+# kind: Secret
+# metadata:
+#   name: goldie-body
+#   labels:
+#     app: goldie-body
+# data:
+#   version: "Z3JlZW4="
