@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"time"
 )
 
 const serviceMap = map[string]string{
@@ -40,7 +41,7 @@ func callGoldieService(w http.ResponseWriter, part, image string) {
 	}
 
 	// Will throw error as it's not quick enough
-	_, err := client.Get("https://golangcode.com/robots.txt")
+	_, err := client.Get("http://" + service + "/images/" + image)
 	if err != nil {
 		alternative, nok := os.LookupEnv("ALTIMG_" + part)
 		if !nok { 
