@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "little-goldie.name" . }}-main
+  labels:
+    app.kubernetes.io/component: main-server
+    {{- include "little-goldie.labels" . | nindent 4 }}
+    {{- include "little-goldie.main.selectorLabels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "little-goldie.main.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.main.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app.kubernetes.io/component: main-server
+        {{- include "little-goldie.main.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.main.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      terminationGracePeriodSeconds: 5
+      serviceAccountName: {{ include "little-goldie.main.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.main.podSecurityContext | nindent 8 }}
+      containers:
+      - name: {{ .Chart.Name }}-main
+        image:  "{{ .Values.main.image.repository }}:{{ .Values.main.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.main.image.pullPolicy }}
+        resources: {}
+        ports:
+        - name: http
+          containerPort: {{ .Values.main.app.listenport }}
+          protocol: TCP
+        env:
+          - name: PORT
+            value: "{{ .Values.main.app.listenport }}"
+          {{- range .Values.main.extraEnvs }}
+          - name: {{ .name | quote }}
+            value: {{ .value | quote }}
+          {{- end }}
+        livenessProbe:
+          httpGet:
+            path:  {{ .Values.body.app.livenessPath | default "/" }}
+            port: http
+        readinessProbe:
+          httpGet:
+            path:  {{ .Values.body.app.livenessPath | default "/" }}
+            port: http
+      {{- with .Values.main.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.main.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.main.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}  

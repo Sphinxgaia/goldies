@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "little-goldie.name" . }}-body
+  labels:
+    app.kubernetes.io/component: body-server
+    {{- include "little-goldie.labels" . | nindent 4 }}
+    {{- include "little-goldie.body.selectorLabels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "little-goldie.body.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.body.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app.kubernetes.io/component: body-server
+        {{- include "little-goldie.body.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.body.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      terminationGracePeriodSeconds: 5
+      serviceAccountName: {{ include "little-goldie.body.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.body.podSecurityContext | nindent 8 }}
+      {{- if .Values.body.initContainer.enabled }}
+      initContainers:
+      - name: sleep
+        image: alpine
+        command: 
+        - sh 
+        - -c 
+        - 'sleep {{ .Values.body.initContainer.timer | default 60 }}'
+      {{- end }}
+      containers:
+      - name: {{ .Chart.Name }}-body
+        image:  "{{ .Values.body.image.repository }}:{{ .Values.body.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.body.image.pullPolicy }}
+        resources: {}
+        ports:
+        - name: http
+          containerPort: {{ .Values.body.app.listenport }}
+          protocol: TCP
+        env:
+          - name: PORT
+            value: "{{ .Values.body.app.listenport }}"
+          {{- range .Values.body.extraEnvs }}
+          - name: {{ .name | quote }}
+            value: {{ .value | quote }}
+          {{- end }}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.body.app.livenessPath | default "/metrics" }}
+            port: http
+        readinessProbe:
+          httpGet:
+            path:  {{ .Values.body.app.livenessPath | default "/metrics" }}
+            port: http
+      {{- with .Values.body.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.body.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.body.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}  

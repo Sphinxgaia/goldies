@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "little-goldie.fullname" . }}-test-connection-main"
+  labels:
+    {{- include "little-goldie.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args: ['{{ include "little-goldie.fullname" . }}-main:{{ .Values.main.service.port }}']
+  restartPolicy: Never

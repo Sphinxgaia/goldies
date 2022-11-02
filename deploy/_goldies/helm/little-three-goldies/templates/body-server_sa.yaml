@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "little-goldie.body.serviceAccountName" . }}
+  labels:
+    {{- include "little-goldie.labels" . | nindent 4 }}
+    {{- include "little-goldie.body.selectorLabels" . | nindent 4 }}
+  {{- with .Values.body.serviceAccount.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+

@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  # connection between main and body / must be static for the moment
+  name: goldie-body
+  labels:
+    kubernetes.io/instance: main-server
+    {{- include "little-goldie.labels" . | nindent 4 }}
+    {{- include "little-goldie.body.selectorLabels" . | nindent 4 }}
+spec:
+  type: {{ .Values.body.service.type }}
+  ports:
+    # connection between main and body / must be static for the moment
+    - port: 9007
+      targetPort: http
+      protocol: TCP
+      name: http
+      {{- if and (eq .Values.body.service.type "NodePort") .Values.body.service.nodePort }}
+      nodePort: {{ .Values.body.service.nodePort }}
+      {{- end }}
+  selector:
+    {{- include "little-goldie.body.selectorLabels" . | nindent 4 }}

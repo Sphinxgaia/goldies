@@ -34,8 +34,8 @@ do
   if [[ ! -z ${PUSH} ]]; then
     echo ""
     echo "--> pushing images for tag $TAG"
-    (docker push "${REPOSITORY}"/goldie-main:"${TAG}" && \
-    docker push "${REPOSITORY}"/goldie-body:"${TAG}") || exit 1
+    (docker push "${REPOSITORY}"/${PREFIX}goldie-main:"${TAG}" && \
+    docker push "${REPOSITORY}"/${PREFIX}goldie-body:"${TAG}") || exit 1
   fi
 
 done
